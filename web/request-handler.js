@@ -26,22 +26,27 @@ module.exports.sendResponse = sendResponse = function(response, data, status){
 };
 
 module.exports.loadFile = loadFile = function(response, fileName, contentType){
-  // var fileData = fs.readFileSync(fileName);
-  // console.log(fileData);
-  console.log(fileName);
   var newHeaders = {};
   extend(newHeaders, headers);
   newHeaders['Content-Type'] = contentType;
   response.writeHead(200, newHeaders);
-  // response.write();
   response.end(fs.readFileSync(fileName));
+};
+
+var collectData = function(request, callback) {
+  var data = '';
+  request.on('data', function(chunk){
+    data += chunk;
+  });
+  request.on('end', function(){
+    callback(data);
+  });
 };
 
 module.exports.handleRequest = function (req, res) {
 
   var URLPath = url.parse(req.url).pathname;
-  
-  // console.log('route: ' + typeof URLPath);
+
   var routes = {
     '/'     : function() { loadFile(res, path.join(__dirname, 'public/index.html'), 'text/html'); }
   };
@@ -50,29 +55,29 @@ module.exports.handleRequest = function (req, res) {
     routes[URLPath] = function(){ loadFile(res, path.join(__dirname, '../data/sites' + URLPath), 'text'); };
   }
 
-  // console.log(Object.keys(routes));
-  if (!path.join(__dirname, '../data/sites' + URLPath)) {
+  var sites = fs.readFileSync(path.join(__dirname, '../data/sites.txt')).toString();
+  if (sites.indexOf(URLPath.slice(1)) > -1){
+    routes[URLPath]();
+  } else {
     sendResponse( res, null, 404 );
   }
-  else {
-    routes[URLPath]();
+
+  switch ( req.method ) {
+    case 'GET':
+      break;
+    case 'POST':
+      collectData(req, function(data){
+        var fileContents = fs.readFileSync(module.exports.datadir);
+        var result = fileContents + data.slice(4) + '\n';
+        fs.writeFileSync(module.exports.datadir, result);
+        console.log('It\'s saved!');
+        sendResponse(res, data, 302);
+      });
+      break;
+    case 'OPTIONS':
+      break;
+    default:
+      // errors
+      break;
   }
-
-  // // Route request methods here
-  // switch ( req.method ) {
-  //   case 'GET':
-  //     break;
-  //   case 'POST':
-  //     break;
-  //   case 'OPTIONS':
-  //     break;
-  //   default:
-  //     // errors
-  //     break;
-  // }
-
-  // res.writeHead( 200,  headers );
-  // res.end('hello');
-
-  // console.log(exports.datadir);
 };
