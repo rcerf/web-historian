@@ -1,5 +1,5 @@
-var http = require("http");
-var myStuff = require("./request-handler");
+var http    = require("http"),
+    myStuff = require("./request-handler");
 
 var port = 8080;
 var ip = "127.0.0.1";
