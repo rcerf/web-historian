@@ -20,8 +20,7 @@ exports.downloadUrls = function(urls){
 
   if (urls) {
     for (var i = 0; i < urls.length; i++) {
-      console.log("Downloading %s", urls[i]);
-      http.get({url: urls[i]}, '../data/sites/' + urls[i]);
+      !fs.existsSync('../data/sites/' + urls[i]) && http.get({url: urls[i]}, '../data/sites/' + urls[i]);
     }
   }
   return true;
